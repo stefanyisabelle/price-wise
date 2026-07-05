@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import StorefrontIcon from "@mui/icons-material/Storefront";
+import TrendingDownIcon from "@mui/icons-material/TrendingDown";
 import {
   Box,
   Button,
+  Card,
+  CardContent,
   Chip,
   CircularProgress,
   Container,
@@ -13,9 +16,9 @@ import {
   TableCell,
   TableHead,
   TableRow,
-  Tooltip,
   Typography,
 } from "@mui/material";
+import { useNavigate, useParams } from "react-router-dom";
 
 import Header from "../../components/Header/Header";
 import { type Product } from "../../models/Product";
@@ -30,14 +33,30 @@ export default function ProductDetails() {
   const repository = useMemo(() => new ProductRepository(), []);
 
   const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
-    repository.getProductById(Number(id)).then((data) => {
-      setProduct(data as Product);
-    });
+    setLoading(true);
+    setNotFound(false);
+
+    repository
+      .getProductById(Number(id))
+      .then((data) => {
+        if (!data) {
+          setNotFound(true);
+          setProduct(null);
+          return;
+        }
+
+        setProduct(data);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, [id, repository]);
 
-  if (!product) {
+  if (loading) {
     return (
       <>
         <Header />
@@ -46,106 +65,211 @@ export default function ProductDetails() {
           sx={{
             mt: 6,
             display: "flex",
-            justifyContent: "center",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 2,
           }}
         >
           <CircularProgress />
+          <Typography color="text.secondary">
+            Carregando informações do produto...
+          </Typography>
         </Container>
       </>
     );
   }
 
+  if (notFound) {
+    return (
+      <>
+        <Header />
+
+        <Container sx={{ mt: 6 }}>
+          <Typography variant="h5" gutterBottom>
+            Produto não encontrado
+          </Typography>
+          <Typography color="text.secondary" sx={{ mb: 3 }}>
+            O produto que você tentou acessar não está disponível.
+          </Typography>
+          <Button variant="contained" onClick={() => navigate("/")}>
+            Voltar ao dashboard
+          </Button>
+        </Container>
+      </>
+    );
+  }
+
+  if (!product) {
+    return null;
+  }
+
   const isGoodPrice = product.currentPrice < product.averagePrice;
+  const savedValue = product.averagePrice - product.currentPrice;
+  const targetReached = product.currentPrice <= product.targetPrice;
 
   return (
     <>
-      <PageTitle title={product.name} />
       <Header />
 
-      <Container sx={{ mt: 4 }}>
-        <Button onClick={() => navigate("/")}>← Voltar</Button>
+      <Container maxWidth="lg" sx={{ mt: 4, pb: 6 }}>
+        <Button
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate("/")}
+          sx={{ mb: 3 }}
+        >
+          Voltar ao dashboard
+        </Button>
 
-        <Typography variant="h4">{product.name}</Typography>
+        <PageTitle
+          title={product.name}
+          subtitle="Detalhes completos de preço e histórico."
+        />
 
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-          Preço atual
-        </Typography>
-
-        <Typography variant="h5" sx={{ fontWeight: "bold" }}>
-          R$ {formatCurrency(product.currentPrice)}
-        </Typography>
-
-        <Typography color="text.secondary" sx={{ mt: 1 }}>
-          Preço médio: R$ {product.averagePrice.toFixed(2)}
-        </Typography>
-
-        <Box sx={{ mt: 2 }}>
-          <Tooltip title="Comparação entre o preço atual e a média histórica">
-            <Chip
-              color={isGoodPrice ? "success" : "warning"}
-              label={isGoodPrice ? "Bom preço" : "Preço dentro da média"}
-            />
-          </Tooltip>
-        </Box>
-
-        <Paper
+        <Box
           sx={{
-            mt: 4,
-            p: 3,
+            display: "grid",
+            gap: 3,
+            gridTemplateColumns: "1fr",
+            mt: 2,
+            "@media (min-width: 900px)": {
+              gridTemplateColumns: "2fr 1fr",
+            },
           }}
         >
-          <Typography variant="h6" sx={{ mb: 2 }}>
-            Comparativo por loja
-          </Typography>
+          <Paper sx={{ p: 3, borderRadius: 4, boxShadow: 3 }}>
+            <Typography variant="subtitle2" color="text.secondary">
+              Preço atual
+            </Typography>
+            <Typography variant="h4" sx={{ fontWeight: 700, mt: 1 }}>
+              {formatCurrency(product.currentPrice)}
+            </Typography>
+            <Chip
+              sx={{ mt: 2 }}
+              color={isGoodPrice ? "success" : "warning"}
+              label={isGoodPrice ? "Preço abaixo da média" : "Dentro da média"}
+              icon={<TrendingDownIcon />}
+            />
 
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Loja</TableCell>
-                <TableCell>Preço</TableCell>
-              </TableRow>
-            </TableHead>
+            <Box
+              sx={{
+                display: "grid",
+                gap: 2,
+                gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                mt: 4,
+              }}
+            >
+              <Card sx={{ p: 2, borderRadius: 3, minHeight: 130 }}>
+                <CardContent>
+                  <Typography variant="body2" color="text.secondary">
+                    Preço médio histórico
+                  </Typography>
+                  <Typography variant="h6" sx={{ mt: 1, fontWeight: 700 }}>
+                    {formatCurrency(product.averagePrice)}
+                  </Typography>
+                </CardContent>
+              </Card>
 
-            <TableBody>
-              {product.stores.map((store) => (
-                <TableRow key={store.store}>
-                  <TableCell>{store.store}</TableCell>
+              <Card sx={{ p: 2, borderRadius: 3, minHeight: 130 }}>
+                <CardContent>
+                  <Typography variant="body2" color="text.secondary">
+                    Preço alvo
+                  </Typography>
+                  <Typography variant="h6" sx={{ mt: 1, fontWeight: 700 }}>
+                    {formatCurrency(product.targetPrice)}
+                  </Typography>
+                  <Typography
+                    color={targetReached ? "success.main" : "warning.main"}
+                    sx={{ mt: 1 }}
+                  >
+                    {targetReached ? "Meta atingida" : "Aguardando redução"}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Box>
 
-                  <TableCell>R$ {store.price.toFixed(2)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+            <Box sx={{ mt: 4 }}>
+              <Typography variant="h6" sx={{ mb: 2 }}>
+                Comparativo por loja
+              </Typography>
 
-          <Typography
-            variant="h6"
-            sx={{
-              mt: 4,
-              mb: 2,
-            }}
-          >
-            Histórico de preços
-          </Typography>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Loja</TableCell>
+                    <TableCell>Preço</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {product.stores.map((store) => (
+                    <TableRow key={store.store}>
+                      <TableCell>{store.store}</TableCell>
+                      <TableCell>{formatCurrency(store.price)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Box>
 
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Mês</TableCell>
-                <TableCell>Preço</TableCell>
-              </TableRow>
-            </TableHead>
+            <Box sx={{ mt: 4 }}>
+              <Typography variant="h6" sx={{ mb: 2 }}>
+                Histórico de preços
+              </Typography>
 
-            <TableBody>
-              {product.history.map((item) => (
-                <TableRow key={item.month}>
-                  <TableCell>{item.month}</TableCell>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Mês</TableCell>
+                    <TableCell>Preço</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {product.history.map((item) => (
+                    <TableRow key={item.month}>
+                      <TableCell>{item.month}</TableCell>
+                      <TableCell>R$ {item.price.toFixed(2)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Box>
+          </Paper>
 
-                  <TableCell>R$ {item.price.toFixed(2)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </Paper>
+          <Box sx={{ display: "grid", gap: 3 }}>
+            <Card sx={{ p: 3, borderRadius: 4, boxShadow: 3 }}>
+              <CardContent>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Resumo rápido
+                </Typography>
+                <Typography variant="h5" sx={{ mt: 1, fontWeight: 700 }}>
+                  {product.name}
+                </Typography>
+                <Box
+                  sx={{ display: "flex", alignItems: "center", gap: 1, mt: 2 }}
+                >
+                  <StorefrontIcon color="primary" />
+                  <Typography>
+                    {product.stores.length} lojas pesquisadas
+                  </Typography>
+                </Box>
+                <Typography sx={{ mt: 2 }}>
+                  Você economiza {formatCurrency(savedValue)} comparado ao preço
+                  médio.
+                </Typography>
+              </CardContent>
+            </Card>
+
+            <Paper sx={{ p: 3, borderRadius: 4, boxShadow: 1 }}>
+              <Typography variant="subtitle2" color="text.secondary">
+                Dica de compra
+              </Typography>
+              <Typography sx={{ mt: 2 }}>
+                {targetReached
+                  ? "Este produto já está abaixo da sua meta de preço. Aproveite a oferta antes que suba de novo."
+                  : "Fique de olho: o preço atual está abaixo da média, mas ainda acima do seu objetivo."}
+              </Typography>
+            </Paper>
+          </Box>
+        </Box>
       </Container>
     </>
   );

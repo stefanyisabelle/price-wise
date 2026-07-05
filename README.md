@@ -1,66 +1,57 @@
 # PriceWise
 
-PriceWise é um MVP desenvolvido com React, Vite, TypeScript e Material UI para auxiliar usuários no monitoramento de preços de produtos. A aplicação permite comparar valores entre diferentes lojas e consultar um histórico simplificado de preços para apoiar a decisão de compra.
+PriceWise é um MVP desenvolvido com React, Vite, TypeScript e Material UI para monitoramento de preços. A aplicação ajuda a comparar preços entre lojas, acompanhar histórico simplificado e identificar boas oportunidades de compra.
 
-## Funcionalidades
+## Principais funcionalidades
 
-- Dashboard com produtos monitorados
-- Visualização dos detalhes de um produto
-- Comparação de preços entre lojas
-- Histórico de preços por período
-- Identificação de boas oportunidades de compra
-- Página de monitoramento (MVP)
-- Página 404 para rotas inexistentes
+- Dashboard com produtos monitorados e filtros responsivos
+- Cards com indicadores (produtos monitorados, boas ofertas, economia média)
+- Página de detalhes do produto (preço atual, média, histórico e comparação por loja)
+- Repositório simulado (mocks) para desenvolvimento sem backend
+- Rotas com tratamento de 404 e navegação com `react-router`
 
-## Tecnologias utilizadas
+## Tecnologias
 
-- React
-- TypeScript
+- React + TypeScript
 - Vite
-- Material UI
+- Material UI (MUI)
 - React Router
 
-## Estrutura do projeto
+## Estrutura do projeto (resumo)
 
 ```text
 src/
-├── components/
-├── helpers/
-├── mocks/
-├── models/
-├── pages/
-├── repositories/
-├── router/
-└── theme/
+├── components/       # UI reutilizável (Header, ProductCard, EmptyState, ...)
+├── models/           # Tipagens (Product, PriceHistory, ...)
+├── pages/            # Páginas (Dashboard, ProductDetails, Monitoring, NotFound)
+├── repositories/     # Repositório com dados simulados
+├── mocks/            # Dados mockados usados pelo repo
+├── router/           # Definição de rotas
+└── theme/            # Tema MUI
 ```
 
-## Como executar o projeto
+## Como executar
 
-1. Clone o repositório.
-2. Instale as dependências:
+1. Instale dependências:
 
 ```bash
 npm install
 ```
 
-3. Execute o projeto:
+2. Rodar em modo de desenvolvimento:
 
 ```bash
 npm run dev
 ```
 
-4. Abra o navegador no endereço informado pelo Vite (geralmente `http://localhost:5173`).
+3. Build de produção:
 
-## Arquitetura
+```bash
+npm run build
+```
 
-O projeto foi desenvolvido seguindo princípios de componentização e separação de responsabilidades:
+4. Preview do build:
 
-- Componentes reutilizáveis
-- Repository com dados simulados (mock)
-- Navegação utilizando React Router
-- Responsividade com Material UI
-- Organização por páginas, componentes e modelos
-
-## Objetivo
-
-Este projeto foi desenvolvido como MVP (Minimum Viable Product) para validar a ideia de um organizador inteligente de compras, permitindo acompanhar preços de produtos em diferentes lojas e identificar oportunidades de economia.
+```bash
+npm run preview
+```
